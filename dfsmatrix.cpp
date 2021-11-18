@@ -9,6 +9,7 @@ bảng màu
 6 = Yellow     14 = Light Yellow
 7 = White      15 = Bright White
 */
+//afafaadf 
 #include <iostream>
 #include <conio.h>
 #include <windows.h>
