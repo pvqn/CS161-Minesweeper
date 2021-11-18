@@ -227,6 +227,16 @@ int asklevel()
 }
 void mark(int x, int y)
 {
+    /* 
+    int column[3] = { -1; 0; 1 };
+    int row[3] = { -1; 0; 1 };
+    for( int i = 0; i < 3; ++i ) for( int j = 0; j < 3; ++j )
+    {
+        if( column[i] == 0 && row[j] == 0 ) continue;
+        if( array[x+row[i]][y+column[j]] == 8 ) continue;
+        ++array[x+row[i]][y+column[j]];
+    }
+    */
 
     if (x > 0)
         if (array[x - 1][y] != 8)
