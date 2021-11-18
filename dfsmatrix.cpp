@@ -42,7 +42,7 @@ void print1();                 //print ra các kí tự * tượng trưng  cho c
 void print2();                 // print ra các mine khi chọn trúng
 int options();
 void playing();
-void initialize1();
+void initialize_backup();       // khoi tao hien trang cua saved game
 int main()
 {
 
@@ -58,7 +58,7 @@ tieptuc:
         break;
     case 2:
         line = 1;
-        initialize1();
+        initialize_backup();
         playing();
     default:
         break;
@@ -79,39 +79,37 @@ void SetColor(int backgound_color, int text_color)
 }
 void initialize()
 {
-    int i, j;
     system("cls");
     gotoxy(0, 0);
     size = asklevel();
-    for (i = 0; i <= size - 1; ++i)
+    for ( int i = 0; i <= size - 1; ++i )
     {
-        for (j = 0; j <= size - 1; ++j)
+        for ( int j = 0; j <= size - 1; ++j )
             array[i][j] = 0;
     }
     randommine();
-    for (i = 0; i <= size - 1; ++i)
+    for ( int i = 0; i <= size - 1; ++i )
     {
-        for (j = 0; j <= size - 1; ++j)
+        for ( int j = 0; j <= size - 1; ++j )
         {
             if (array[i][j] == 8)
                 mark(i, j);
         }
     }
 }
-void initialize1()
+void initialize_backup()
 {
     system("cls");
     size = size_lastgame;
     cout << "welcome back to last game :D" << endl;
-    int i, j;
-    for (i = 0; i <= size - 1; ++i)
+    for ( int i = 0; i <= size - 1; ++i )
     {
-        for (j = 0; j <= size - 1; ++j)
+        for ( int j = 0; j <= size - 1; ++j )
             array[i][j] = lastgame[i][j];
     }
-    for (i = 0; i <= size - 1; ++i)
+    for ( int i = 0; i <= size - 1; ++i )
     {
-        for (j = 0; j <= size - 1; ++j)
+        for ( int j = 0; j <= size - 1; ++j )
             if (array[i][j] >= 0)
                 cout << "*";
             else if (array[i][j] < 0)
@@ -233,8 +231,10 @@ void mark(int x, int y)
     for( int i = 0; i < 3; ++i ) for( int j = 0; j < 3; ++j )
     {
         if( column[i] == 0 && row[j] == 0 ) continue;
-        if( array[x+row[i]][y+column[j]] == 8 ) continue;
-        ++array[x+row[i]][y+column[j]];
+        int _x = x + row[i], _y = y + column[j];
+        if( _x < 0 || _x >= size || _y < 0 || _y >= size ) continue;
+        if( array[_x][_y] == 8 ) continue;
+        ++array[_x][_y];
     }
     */
 
@@ -272,23 +272,18 @@ void gotoxy(short x, short y)
 }
 void print1()
 {
-    int i, j;
 
-    for (i = 0; i <= size - 1; ++i)
+    for ( int i = 0; i <= size - 1; ++i )
     {
-        for (j = 0; j <= size - 1; ++j)
-        {
-            cout << "*";
-        }
+        for ( int j = 0; j <= size - 1; ++j ) cout << "*";
         cout << endl;
     }
 }
 void print2()
 {
     gotoxy(0, line);
-    int i, j;
-    for (i = 1; i <= size - 1; ++i)
-        for (j = 1; j <= size - 1; ++j)
+    for ( int i = 1; i <= size - 1; ++i )
+        for ( int j = 1; j <= size - 1; ++j )
             if ((array[i][j]) == 8)
             {
                 SetColor(0, 12);
