@@ -42,6 +42,7 @@ void print1();                 //print ra các kí tự * tượng trưng  cho c
 void print2();                 // print ra các mine khi chọn trúng
 int options();
 void playing();
+//a afa  asg
 void initialize_backup();       // khoi tao hien trang cua saved game
 int main()
 {
