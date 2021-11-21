@@ -42,6 +42,8 @@ int options();
 void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastgame)[20][20], int &size_lastgame);
 //a afa  asg
 void initialize_backup(int (&array)[20][20], int (&lastgame)[20][20], int &size_lastgame, int &size); // khoi tao hien trang cua saved game
+void newstate(int (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged);
+void oldstate(int (&array)[20][20], int x, int y, int &line);
 int main()
 {
     int size = 0;
@@ -312,132 +314,80 @@ void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastg
     int x = 0, y = 0 + line;
     gotoxy(0, 0 + line); // x,y tọa độ
     SetColor(5, 7);
+    // vị trí đầu tiên của con trỏ khi mới vào game
+    // ô chưa được mở
     if (array[y - line][x] >= 0)
     {
-        SetColor(5, 7);
+        SetColor(5, 7); // nền tím, chữ trắng
         cout << "*";
     }
+    // ô đã đoực mở nhưng không có gì
     else if (array[y - line][x] == -1)
     {
-        SetColor(5, 5);
+        SetColor(5, 5); // nền trắng, chữ trắng
         cout << "*";
     }
+    //case khi hàm playing được call trong last game
+    // ô đã được mở và được đánh dấu
     if (array[y - line][x] < -1)
     {
-        SetColor(5, 14);
+        SetColor(5, 14); // nền tím chữ vàng
         cout << -(array[y - line][x] + 1);
     }
     gotoxy(x, y);
-
+    bool unchanged = false;
+    // unchanged dể xác định trạng thái của con trỏ có thay đổi hay không
+    // nếu quá phạm vi của bảng thì trạng thái vẫn giữ nguyên, không di chuyển
     while (c != 120)
     {
         c = getch();
-        if (array[y - line][x] >= 0)
+        // ô chưa được mở
+        while (c != 72 && c != 80 && c != 75 && c != 77 && c != 97)
+            c = getch();
+        // trả ô về trạng thái cũ sau khi con trỏ di chuyển snang chổ khác
+        if (!unchanged)
         {
-            SetColor(0, 7);
-            cout << "*";
+            oldstate(array, x, y, line);
         }
-        else if (array[y - line][x] == -1)
-        {
-            SetColor(7, 7);
-            cout << "*";
-        }
-        if (array[y - line][x] < -1)
-        {
-            SetColor(0, 14);
-            cout << -(array[y - line][x] + 1);
-        }
-        gotoxy(x, y);
+
+        // bắt đầu nhận vị trí mới
         switch (c)
         {
-
         case KEY_UP:
-
             --y;
-
-            gotoxy(x, y); //key up
-            if (array[y - line][x] >= 0)
+            newstate(array, x, y, line, size, unchanged);
+            if (unchanged)
             {
-                SetColor(5, 7);
-                cout << "*";
+                ++y;
+                newstate(array, x, y, line, size, unchanged);
             }
-            else if (array[y - line][x] == -1)
-            {
-                SetColor(5, 5);
-                cout << "*";
-            }
-            if (array[y - line][x] < -1)
-            {
-                SetColor(5, 14);
-                cout << -(array[y - line][x] + 1);
-            }
-            gotoxy(x, y);
             break;
         case KEY_DOWN:
-
             ++y;
-
-            gotoxy(x, y); // key down
-            if (array[y - line][x] >= 0)
+            newstate(array, x, y, line, size, unchanged);
+            if (unchanged)
             {
-                SetColor(5, 7);
-                cout << "*";
+                --y;
+                newstate(array, x, y, line, size, unchanged);
             }
-            else if (array[y - line][x] == -1)
-            {
-                SetColor(5, 5);
-                cout << "*";
-            }
-            if (array[y - line][x] < -1)
-            {
-                SetColor(5, 14);
-                cout << -(array[y - 5][x] + 1);
-            }
-            gotoxy(x, y);
             break;
         case KEY_LEFT:
-
             --x;
-
-            gotoxy(x, y); // key left
-            if (array[y - line][x] >= 0)
+            newstate(array, x, y, line, size, unchanged);
+            if (unchanged)
             {
-                SetColor(5, 7);
-                cout << "*";
+                ++x;
+                newstate(array, x, y, line, size, unchanged);
             }
-            else if (array[y - line][x] == -1)
-            {
-                SetColor(5, 5);
-                cout << "*";
-            }
-            if (array[y - line][x] < -1)
-            {
-                SetColor(5, 14);
-                cout << -(array[y - 5][x] + 1);
-            }
-            gotoxy(x, y);
             break;
         case KEY_RIGHT:
-
             ++x;
-
-            gotoxy(x, y); // key right
-            if (array[y - line][x] >= 0)
+            newstate(array, x, y, line, size, unchanged);
+            if (unchanged)
             {
-                SetColor(5, 7);
-                cout << "*";
+                --x;
+                newstate(array, x, y, line, size, unchanged);
             }
-            else if (array[y - line][x] == -1)
-            {
-                SetColor(5, 5);
-                cout << "*";
-            }
-            if (array[y - line][x] < -1)
-            {
-                SetColor(5, 14);
-                cout << -(array[y - line][x] + 1);
-            }
-            gotoxy(x, y);
             break;
         }
 
@@ -499,4 +449,55 @@ void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastg
     cout << "failed!!!" << endl;
     cout << "press any key to return to menu";
     getch();
+}
+void newstate(int (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged)
+{
+    // nếu trong phạm vi của bảng thì cho di chuyển đến
+    if (0 <= x && x <= size - 1 && 0 <= (y - line) && (y - line) <= size - 1)
+    {
+        gotoxy(x, y);
+        if (array[y - line][x] >= 0)
+        {
+            SetColor(5, 7);
+            cout << "*";
+        }
+        else if (array[y - line][x] == -1)
+        {
+            SetColor(5, 5);
+            cout << "*";
+        }
+        if (array[y - line][x] < -1)
+        {
+            SetColor(5, 14);
+            cout << -(array[y - line][x] + 1);
+        }
+        gotoxy(x, y);
+        unchanged = false;
+    }
+    else
+        unchanged = true;
+}
+void oldstate(int (&array)[20][20], int x, int y, int &line)
+{
+
+    if (array[y - line][x] >= 0)
+    {
+        SetColor(0, 7); // nền đen, chữ trắng
+        cout << "*";
+    }
+    // ô đã mở nhưng không có gì
+    else if (array[y - line][x] == -1)
+    {
+        SetColor(7, 7); // nền trắng, chữ trắng
+        cout << "*";
+    }
+    // ô được mở nhưng được đánh giấu
+    if (array[y - line][x] < -1)
+    {
+        SetColor(0, 14); // nền đen chữ vàng
+        cout << -(array[y - line][x] + 1);
+    }
+    gotoxy(x, y);
+    // gotoxy ở đây để giữa con trỏ vẫn ở vị trí cũ sau khi in ra lại
+    // định dạng mặc định
 }
