@@ -10,59 +10,60 @@ bảng màu
 7 = White      15 = Bright White
 */
 
-//afafaadfaf afaf 
+//afafaadfaf afaf
 #include <iostream>
 #include <conio.h>
-int i;
+
 #include <windows.h>
 #define KEY_UP 72   // dùng các phím mũi tên để di chuyển, phím a để chọn và phím x để thoát
 #define KEY_DOWN 80 // i trong mảng hai chiều tương đương vs 0y, j trong mảng hai chiều thì ox
 #define KEY_LEFT 75
 #define KEY_RIGHT 77
 using namespace std;
-int size = 0;
-int array[20][20];
-int size_lastgame = 0;
-void initialize(); // khởi tạo mảng 2 chiều và random mine
-int asklevel();    // hỏi mức độ level
-int line = 0, score = 0;
-int scores[10];
-int lastgame[20][20];
+
+void initialize(int (&array)[20][20], int &size); // khởi tạo mảng 2 chiều và random mine
+int asklevel();                                   // hỏi mức độ level
+
 // vì có in 5 dòng để yêu cầu ng chơi chọn, nên array[y-5][x] với x=0, y=5 là vị
 // trí của con trỏ sau khi in 5 dòng đó, phần tử mảng array[y-5][x] sẽ là phần tử đầu tiên
-void randommine();                                  //random mine nhiều vị trí khác nhau
-void dfs(int i, int j);                             // tìm kiếm viền, nếu chọn 0 thì sẽ loang ra đến viền mine
-void print();                                       // print mảng 2 chiều
-void SetColor(int backgound_color, int text_color); // set color chữ và background
-void mark(int x, int y);                            // đánh dấu vị trí của bom theo 8 hướng
+void randommine(int (&array)[20][20], int &size);                   //random mine nhiều vị trí khác nhau
+void dfs(int i, int j, int &size, int (&array)[20][20], int &line); // tìm kiếm viền, nếu chọn 0 thì sẽ loang ra đến viền mine
+void print(int (&array)[20][20], int &size);                        // print mảng 2 chiều
+void SetColor(int backgound_color, int text_color);                 // set color chữ và background
+void mark(int x, int y, int (&array)[20][20], int &size);           // đánh dấu vị trí của bom theo 8 hướng
 // vi dụ
 // 1 1 1
 // 1 8 1
 // 1 1 1
-void gotoxy(short x, short y); // đi đến 1 vị trí nào đó trên console
-void print1();                 //print ra các kí tự * tượng trưng  cho các ô khi bắt đầu chơi
-void print2();                 // print ra các mine khi chọn trúng
+void gotoxy(short x, short y);                           // đi đến 1 vị trí nào đó trên console
+void print1(int (&array)[20][20], int &size);            //print ra các kí tự * tượng trưng  cho các ô khi bắt đầu chơi
+void print2(int (&array)[20][20], int &size, int &line); // print ra các mine khi chọn trúng
 int options();
-void playing();
+void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastgame)[20][20], int &size_lastgame);
 //a afa  asg
-void initialize_backup();       // khoi tao hien trang cua saved game
+void initialize_backup(int (&array)[20][20], int (&lastgame)[20][20], int &size_lastgame, int &size); // khoi tao hien trang cua saved game
 int main()
 {
-
+    int size = 0;
+    int array[20][20];
+    int size_lastgame = 0;
+    int line = 0, score = 0;
+    int scores[10];
+    int lastgame[20][20];
 tieptuc:
     switch (options())
     {
 
     case 1:
         line = 5;
-        initialize();
-        print1();
-        playing();
+        initialize(array, size);
+        print1(array, size);
+        playing(array, size, line, score, lastgame, size_lastgame);
         break;
     case 2:
         line = 1;
-        initialize_backup();
-        playing();
+        initialize_backup(array, lastgame, size_lastgame, size);
+        playing(array, size, line, score, lastgame, size_lastgame);
     default:
         break;
     }
@@ -80,39 +81,39 @@ void SetColor(int backgound_color, int text_color)
     int color_code = backgound_color * 16 + text_color;
     SetConsoleTextAttribute(hStdout, color_code);
 }
-void initialize()
+void initialize(int (&array)[20][20], int &size)
 {
     system("cls");
     gotoxy(0, 0);
     size = asklevel();
-    for ( int i = 0; i <= size - 1; ++i )
+    for (int i = 0; i <= size - 1; ++i)
     {
-        for ( int j = 0; j <= size - 1; ++j )
+        for (int j = 0; j <= size - 1; ++j)
             array[i][j] = 0;
     }
-    randommine();
-    for ( int i = 0; i <= size - 1; ++i )
+    randommine(array, size);
+    for (int i = 0; i <= size - 1; ++i)
     {
-        for ( int j = 0; j <= size - 1; ++j )
+        for (int j = 0; j <= size - 1; ++j)
         {
             if (array[i][j] == 8)
-                mark(i, j);
+                mark(i, j, array, size);
         }
     }
 }
-void initialize_backup()
+void initialize_backup(int (&array)[20][20], int (&lastgame)[20][20], int &size_lastgame, int &size)
 {
     system("cls");
     size = size_lastgame;
     cout << "welcome back to last game :D" << endl;
-    for ( int i = 0; i <= size - 1; ++i )
+    for (int i = 0; i <= size - 1; ++i)
     {
-        for ( int j = 0; j <= size - 1; ++j )
+        for (int j = 0; j <= size - 1; ++j)
             array[i][j] = lastgame[i][j];
     }
-    for ( int i = 0; i <= size - 1; ++i )
+    for (int i = 0; i <= size - 1; ++i)
     {
-        for ( int j = 0; j <= size - 1; ++j )
+        for (int j = 0; j <= size - 1; ++j)
             if (array[i][j] >= 0)
                 cout << "*";
             else if (array[i][j] < 0)
@@ -128,9 +129,8 @@ void initialize_backup()
 
         cout << endl;
     }
-    
 }
-void randommine()
+void randommine(int (&array)[20][20], int &size)
 {
     int i = 1, x, y;
 
@@ -145,7 +145,7 @@ void randommine()
         }
     }
 }
-void dfs(int i, int j)
+void dfs(int i, int j, int &size, int (&array)[20][20], int &line)
 {
     if ((i < 0) or (j < 0) or (i > size - 1) or (j > size - 1))
         return; // nếu quá miền xác định của mảng, return
@@ -167,16 +167,16 @@ void dfs(int i, int j)
     {
         array[i][j] -= 1;
         if (array[i - 1][j] >= 0) // phải lớn hơn không vì có thể sé xét vào ô đã được mở
-            dfs(i - 1, j);
+            dfs(i - 1, j, size, array, line);
         if (array[i + 1][j] >= 0)
-            dfs(i + 1, j);
+            dfs(i + 1, j, size, array, line);
         if (array[i][j + 1] >= 0)
-            dfs(i, j + 1);
+            dfs(i, j + 1, size, array, line);
         if (array[i][j - 1] >= 0)
-            dfs(i, j - 1);
+            dfs(i, j - 1, size, array, line);
     }
 }
-void print()
+void print(int (&array)[20][20], int &size)
 {
     int i, j;
     for (i = 0; i <= size - 1; ++i)
@@ -226,7 +226,7 @@ int asklevel()
     }
     return size_array;
 }
-void mark(int x, int y)
+void mark(int x, int y, int (&array)[20][20], int &size)
 {
     /* 
     int column[3] = { -1; 0; 1 };
@@ -273,20 +273,21 @@ void gotoxy(short x, short y)
     hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleCursorPosition(hConsoleOutput, Cursor_an_Pos);
 }
-void print1()
+void print1(int (&array)[20][20], int &size)
 {
 
-    for ( int i = 0; i <= size - 1; ++i )
+    for (int i = 0; i <= size - 1; ++i)
     {
-        for ( int j = 0; j <= size - 1; ++j ) cout << "*";
+        for (int j = 0; j <= size - 1; ++j)
+            cout << "*";
         cout << endl;
     }
 }
-void print2()
+void print2(int (&array)[20][20], int &size, int &line)
 {
     gotoxy(0, line);
-    for ( int i = 1; i <= size - 1; ++i )
-        for ( int j = 1; j <= size - 1; ++j )
+    for (int i = 1; i <= size - 1; ++i)
+        for (int j = 1; j <= size - 1; ++j)
             if ((array[i][j]) == 8)
             {
                 SetColor(0, 12);
@@ -305,7 +306,7 @@ int options()
     cin >> key;
     return key;
 }
-void playing()
+void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastgame)[20][20], int &size_lastgame)
 {
     int c = 0; // ký tự nhập từ bàn phím
     int x = 0, y = 0 + line;
@@ -455,14 +456,14 @@ void playing()
             }
             else if (array[y - line][x] == 8) // nếu dính bom
             {
-                print2();
+                print2(array, size, line);
                 gotoxy(0, line + size);
                 cout << "failed!!!" << endl;
                 break;
             }
             else if (array[y - line][x] == 0) // nếu ô mở là không có gì, bắt đầu loang
             {                                 // tránh trường hợp chọn lại 1 ô, nó sẽ cho ra giá trị âm, lộ dữ liệu
-                dfs(y - line, x);
+                dfs(y - line, x, size, array, line);
                 gotoxy(x, y);
                 SetColor(5, 5);
                 cout << "*";
@@ -470,7 +471,6 @@ void playing()
                 ++score;
             }
         }
-        
     }
     SetColor(0, 7);
     if (c == 120) // nếu c='x' nghĩa là đang chơi nhưng thoát ra
@@ -489,8 +489,7 @@ void playing()
                     lastgame[i][j] = array[i][j];
         }
         size_lastgame = size;
-        
-        
+
         return;
         cout << "press any key to return to menu";
         getch();
@@ -498,6 +497,6 @@ void playing()
     }
     gotoxy(0, line + size);
     cout << "failed!!!" << endl;
-             cout << "press any key to return to menu";
+    cout << "press any key to return to menu";
     getch();
 }
