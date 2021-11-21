@@ -9,9 +9,11 @@ bảng màu
 6 = Yellow     14 = Light Yellow
 7 = White      15 = Bright White
 */
+
 //afafaadfaf afaf 
 #include <iostream>
 #include <conio.h>
+int i;
 #include <windows.h>
 #define KEY_UP 72   // dùng các phím mũi tên để di chuyển, phím a để chọn và phím x để thoát
 #define KEY_DOWN 80 // i trong mảng hai chiều tương đương vs 0y, j trong mảng hai chiều thì ox
