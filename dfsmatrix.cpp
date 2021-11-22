@@ -13,8 +13,9 @@ bảng màu
 //afafaadfaf afaf
 #include <iostream>
 #include <conio.h>
-
+#include <vector>
 #include <windows.h>
+#include <chrono>
 #define KEY_UP 72   // dùng các phím mũi tên để di chuyển, phím a để chọn và phím x để thoát
 #define KEY_DOWN 80 // i trong mảng hai chiều tương đương vs 0y, j trong mảng hai chiều thì ox
 #define KEY_LEFT 75
@@ -39,19 +40,24 @@ void gotoxy(short x, short y);                           // đi đến 1 vị tr
 void print1(int (&array)[20][20], int &size);            //print ra các kí tự * tượng trưng  cho các ô khi bắt đầu chơi
 void print2(int (&array)[20][20], int &size, int &line); // print ra các mine khi chọn trúng
 int options();
+int getch_noblock();
 void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastgame)[20][20], int &size_lastgame);
 //a afa  asg
 void initialize_backup(int (&array)[20][20], int (&lastgame)[20][20], int &size_lastgame, int &size); // khoi tao hien trang cua saved game
 void newstate(int (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged);
 void oldstate(int (&array)[20][20], int x, int y, int &line);
+struct score
+{
+    vector<int> score_beginner, score_medium, score_advanced;
+};
 int main()
 {
     int size = 0;
     int array[20][20];
     int size_lastgame = 0;
     int line = 0, score = 0;
-    int scores[10];
     int lastgame[20][20];
+
 tieptuc:
     switch (options())
     {
@@ -335,92 +341,102 @@ void playing(int (&array)[20][20], int &size, int &line, int &score, int (&lastg
         cout << -(array[y - line][x] + 1);
     }
     gotoxy(x, y);
+    auto begin = std::chrono::high_resolution_clock::now();
     bool unchanged = false;
     // unchanged dể xác định trạng thái của con trỏ có thay đổi hay không
     // nếu quá phạm vi của bảng thì trạng thái vẫn giữ nguyên, không di chuyển
     while (c != 120)
     {
-        c = getch();
-        // ô chưa được mở
-        while (c != 72 && c != 80 && c != 75 && c != 77 && c != 97)
-            c = getch();
-        // trả ô về trạng thái cũ sau khi con trỏ di chuyển snang chổ khác
-        if (!unchanged)
-        {
-            oldstate(array, x, y, line);
-        }
+        c = -1;
+        c = getch_noblock();
 
-        // bắt đầu nhận vị trí mới
-        switch (c)
+        // ô chưa được mở
+        if (c == 72 || c == 80 || c == 75 || c == 77 || c == 115)
         {
-        case KEY_UP:
-            --y;
-            newstate(array, x, y, line, size, unchanged);
-            if (unchanged)
+            // trả ô về trạng thái cũ sau khi con trỏ di chuyển snang chổ khác
+            if (!unchanged)
             {
-                ++y;
-                newstate(array, x, y, line, size, unchanged);
+                oldstate(array, x, y, line);
             }
-            break;
-        case KEY_DOWN:
-            ++y;
-            newstate(array, x, y, line, size, unchanged);
-            if (unchanged)
+
+            // bắt đầu nhận vị trí mới
+            switch (c)
             {
+            case KEY_UP:
                 --y;
                 newstate(array, x, y, line, size, unchanged);
-            }
-            break;
-        case KEY_LEFT:
-            --x;
-            newstate(array, x, y, line, size, unchanged);
-            if (unchanged)
-            {
-                ++x;
+                if (unchanged)
+                {
+                    ++y;
+                    newstate(array, x, y, line, size, unchanged);
+                }
+                break;
+            case KEY_DOWN:
+                ++y;
                 newstate(array, x, y, line, size, unchanged);
-            }
-            break;
-        case KEY_RIGHT:
-            ++x;
-            newstate(array, x, y, line, size, unchanged);
-            if (unchanged)
-            {
+                if (unchanged)
+                {
+                    --y;
+                    newstate(array, x, y, line, size, unchanged);
+                }
+                break;
+            case KEY_LEFT:
                 --x;
                 newstate(array, x, y, line, size, unchanged);
-            }
-            break;
-        }
-
-        if (c == 97) // nếu c='a'
-
-        {
-            if ((array[y - line][x] > 0) && (array[y - line][x] != 8)) // nếu phần tử được chọn là  chỉ số  mật độ
-            {
-                SetColor(5, 14);
-                cout << array[y - line][x];
-                gotoxy(x, y);
-                array[y - line][x] = -array[y - line][x] - 1; // gán giá trị mới cho phần tử đó để khi lưu lại
-                SetColor(0, 7);                               // phân biệt được các ô đã mở hay chưa mở bằng cách
-                // chỉ mở, không loang                  // kiểm tra dương hay âm, dương là chưa mở, âm là mở rồi
-                ++score; // cộng điểm
-            }
-            else if (array[y - line][x] == 8) // nếu dính bom
-            {
-                print2(array, size, line);
-                gotoxy(0, line + size);
-                cout << "failed!!!" << endl;
+                if (unchanged)
+                {
+                    ++x;
+                    newstate(array, x, y, line, size, unchanged);
+                }
+                break;
+            case KEY_RIGHT:
+                ++x;
+                newstate(array, x, y, line, size, unchanged);
+                if (unchanged)
+                {
+                    --x;
+                    newstate(array, x, y, line, size, unchanged);
+                }
                 break;
             }
-            else if (array[y - line][x] == 0) // nếu ô mở là không có gì, bắt đầu loang
-            {                                 // tránh trường hợp chọn lại 1 ô, nó sẽ cho ra giá trị âm, lộ dữ liệu
-                dfs(y - line, x, size, array, line);
-                gotoxy(x, y);
-                SetColor(5, 5);
-                cout << "*";
-                gotoxy(x, y);
-                ++score;
+
+            if (c == 115) // nếu c='s'
+
+            {
+                if ((array[y - line][x] > 0) && (array[y - line][x] != 8)) // nếu phần tử được chọn là  chỉ số  mật độ
+                {
+                    SetColor(5, 14);
+                    cout << array[y - line][x];
+                    gotoxy(x, y);
+                    array[y - line][x] = -array[y - line][x] - 1; // gán giá trị mới cho phần tử đó để khi lưu lại
+                    SetColor(0, 7);                               // phân biệt được các ô đã mở hay chưa mở bằng cách
+                    // chỉ mở, không loang                  // kiểm tra dương hay âm, dương là chưa mở, âm là mở rồi
+                    ++score; // cộng điểm
+                }
+                else if (array[y - line][x] == 8) // nếu dính bom
+                {
+                    print2(array, size, line);
+                    gotoxy(0, line + size);
+                    cout << "failed!!!" << endl;
+                    break;
+                }
+                else if (array[y - line][x] == 0) // nếu ô mở là không có gì, bắt đầu loang
+                {                                 // tránh trường hợp chọn lại 1 ô, nó sẽ cho ra giá trị âm, lộ dữ liệu
+                    dfs(y - line, x, size, array, line);
+                    gotoxy(x, y);
+                    SetColor(5, 5);
+                    cout << "*";
+                    gotoxy(x, y);
+                    ++score;
+                }
             }
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+
+        gotoxy(30, 15);
+        SetColor(0, 7);
+        printf("Time measured: %.0f seconds.", elapsed.count() * 1e-9);
     }
     SetColor(0, 7);
     if (c == 120) // nếu c='x' nghĩa là đang chơi nhưng thoát ra
@@ -479,7 +495,7 @@ void newstate(int (&array)[20][20], int x, int y, int &line, int &size, bool &un
 }
 void oldstate(int (&array)[20][20], int x, int y, int &line)
 {
-
+    gotoxy(x, y);
     if (array[y - line][x] >= 0)
     {
         SetColor(0, 7); // nền đen, chữ trắng
@@ -500,4 +516,11 @@ void oldstate(int (&array)[20][20], int x, int y, int &line)
     gotoxy(x, y);
     // gotoxy ở đây để giữa con trỏ vẫn ở vị trí cũ sau khi in ra lại
     // định dạng mặc định
+}
+int getch_noblock()
+{
+    if (_kbhit())
+        return _getch();
+    else
+        return -1;
 }
