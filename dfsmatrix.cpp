@@ -9,28 +9,44 @@ bảng màu
 6 = Yellow     14 = Light Yellow
 7 = White      15 = Bright White
 */
-
-//afafaadfaf afaf
 #include <iostream>
 #include <conio.h>
 #include <vector>
 #include <windows.h>
 #include <chrono>
-#define KEY_UP 72   // dùng các phím mũi tên để di chuyển, phím a để chọn và phím x để thoát
-#define KEY_DOWN 80 // i trong mảng hai chiều tương đương vs 0y, j trong mảng hai chiều thì ox
+// dùng các phím mũi tên để di chuyển, phím a để chọn và phím x để thoát
+// i trong mảng hai chiều tương đương vs 0y, j trong mảng hai chiều thì ox
 #define KEY_LEFT 75
+#define KEY_UP 72   
+#define KEY_DOWN 80 
 #define KEY_RIGHT 77
+// các phím điều khiển
+#define CLICK 115
+#define ESCAPE 120
+// các size của board
+#define BEGINNER 12
+#define INTERMEDIATE 16
+#define EXPERT 20
 using namespace std;
 struct game
 {
     char array[20][20], state[20][20];
     int score = 0, size = 0, time = 0;
 };
+struct scores
+{
+    vector<int> score, time;
+    vector<float> rate;
+};
+struct allscores
+{
+    scores beginner, intermediate, expert;
+};
 void initialize(char (&array)[20][20], int &size, char (&state)[20][20]); // khởi tạo mảng 2 chiều và random mine
 int asklevel();                                                           // hỏi mức độ level
 
-// vì có in 5 dòng để yêu cầu ng chơi chọn, nên array[y-5][x] với x=0, y=5 là vị
-// trí của con trỏ sau khi in 5 dòng đó, phần tử mảng array[y-5][x] sẽ là phần tử đầu tiên
+// vì có in 5 dòng để yêu cầu ng chơi chọn, nên array[y-line][x] với x=0, y=line là vị
+// trí của con trỏ sau khi in số line dòng đó, phần tử mảng array[y-line][x] sẽ là phần tử đầu tiên
 void randommine(char (&array)[20][20], int &size);                                          //random mine nhiều vị trí khác nhau
 void dfs(int i, int j, int &size, char (&array)[20][20], int &line, char (&state)[20][20]); // tìm kiếm viền, nếu chọn 0 thì sẽ loang ra đến viền mine
 void print(char (&array)[20][20], int &size);                                               // print mảng 2 chiều
@@ -43,49 +59,52 @@ void mark(int x, int y, char (&array)[20][20], int &size);                      
 void gotoxy(short x, short y);                            // đi đến 1 vị trí nào đó trên console
 void print1(char (&array)[20][20], int &size);            //print ra các kí tự * tượng trưng  cho các ô khi bắt đầu chơi
 void print2(char (&array)[20][20], int &size, int &line); // print ra các mine khi chọn trúng
-int options();
-int getch_noblock();
-void playing(char (&array)[20][20], int &size, int &line, int &score, game &lastgame, char (&state)[20][20]);
-//a afa  asg
+int options(); // hỏi lựa chọn người khi vào menu chính
+int getch_noblock(); // check xem có phím nào được nhấn không
+void playing(char (&array)[20][20], int &size, int &line, int &score, game &lastgame, char (&state)[20][20], allscores &statictis);
 void initialize_backup(char (&array)[20][20], game &lastgame, int &size, char (&state)[20][20], int &score); // khoi tao hien trang cua saved game
-void newstate(char (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged, char (&state)[20][20]);
-void oldstate(char (&array)[20][20], int x, int y, int &line, char (&state)[20][20]);
-
-struct score
-{
-    vector<int> score, time, rate;
-} score_beginner, score_intermediate, score_advanced;
+void newstate(char (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged, char (&state)[20][20]); // trả lại trạng thái cũ của cell sau khi con trỏ đi qua
+void oldstate(char (&array)[20][20], int x, int y, int &line, char (&state)[20][20]); // cập nhật trạng thái mới của cell khi con trỏ đang trỏ đến
+void getscore(int &score, int &time, int &size, allscores &statistics); // nhập điểm vào record
+void printscore(allscores &statistics); // in record bằng cách hỏi level
+void printscore_level(scores &level); // in record theo level
 int main()
 {
-    int size = 0;
+    int size = 0, key;
     char array[20][20], state[20][20];
     game lastgame;
+    allscores statistics;
     int line = 0, score = 0;
-
 tieptuc:
-    switch (options())
+    key = options();
+    switch (key)
     {
 
-    case 1:
+    case '1':
         line = 5;
         initialize(array, size, state);
         print1(array, size);
-        playing(array, size, line, score, lastgame, state);
+        playing(array, size, line, score, lastgame, state, statistics);
         break;
-    case 2:
+    case '2':
         line = 1;
         initialize_backup(array, lastgame, size, state, score);
-        playing(array, size, line, score, lastgame, state);
+        playing(array, size, line, score, lastgame, state, statistics);
+        break;
+    case '3':
+        printscore(statistics);
+        break;
+    case '4':
+        return 0;
+        break;
     default:
+        cout << "no matching found" << endl;
+        cout << "press anykey to enter again";
+        getch();
         break;
     }
-
     goto tieptuc;
-
-    getch();
-    return 0;
 }
-
 void SetColor(int backgound_color, int text_color)
 {
     HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -98,23 +117,26 @@ void initialize(char (&array)[20][20], int &size, char (&state)[20][20])
     system("cls");
     gotoxy(0, 0);
     size = asklevel();
+    // gán giá trị ban đầu cho mảng array
     for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
             array[i][j] = '0';
     }
+    // gán giá trị ban đầu cho mảng state
     for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
             state[i][j] = 'U';
     }
+    // random bomb trong mảng array
     randommine(array, size);
     for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
         {
             if (array[i][j] == 'B')
-                mark(i, j, array, size);
+                mark(i, j, array, size); // đánh dấu các số xung quanh ô có bomb
         }
     }
 }
@@ -187,7 +209,7 @@ void dfs(int i, int j, int &size, char (&array)[20][20], int &line, char (&state
     if (array[i][j] == '0') // bằng không, thì tiếp tục loang, không thì chỉ mở
     {
         state[i][j] = 'O';
-        if (state[i - 1][j] == 'U') // phải lớn hơn không vì có thể sé xét vào ô đã được mở
+        if (state[i - 1][j] == 'U') 
             dfs(i - 1, j, size, array, line, state);
         if (state[i + 1][j] == 'U')
             dfs(i + 1, j, size, array, line, state);
@@ -213,24 +235,30 @@ void print(char (&array)[20][20], int &size)
 }
 int asklevel()
 {
-    cout << " which level do you want to play? \n1.beginner \n2.intermediate \n3.advanced" << endl;
+getkey:
+    system("cls");
+    cout << " which level do you want to play? \n1.beginner \n2.intermediate \n3.expert" << endl;
     cout << "enter 1,2 or 3: ";
     char key = ' ';
+
     cin >> key;
     int size_array = 0;
     switch (key)
     {
     case '1':
-        size_array = 12;
+        size_array = BEGINNER;
         break;
     case '2':
-        size_array = 16;
+        size_array = INTERMEDIATE;
         break;
     case '3':
-        size_array = 20;
+        size_array = EXPERT;
         break;
     default:
-        cout << " no matching found, enter again" << endl;
+        cout << "no matching found" << endl;
+        cout << "press anykey to enter again";
+        getch();
+        goto getkey;
         break;
     }
     return size_array;
@@ -309,13 +337,13 @@ void print2(char (&array)[20][20], int &size, int &line)
 int options()
 {
     system("cls");
-    cout << "Minesweepere demo \nWelcome! \n1.New game \n2.Continue playing \n3.Highest score \n4.Quit" << endl;
+    cout << "Minesweepere demo \nWelcome! \n1.New game \n2.Continue playing \n3.Statistics \n4.Quit" << endl;
     cout << "press 1, 2, 3 or 4 to choose: ";
-    int key;
+    char key;
     cin >> key;
-    return key;
+    return (int)key;
 }
-void playing(char (&array)[20][20], int &size, int &line, int &score, game &lastgame, char (&state)[20][20])
+void playing(char (&array)[20][20], int &size, int &line, int &score, game &lastgame, char (&state)[20][20], allscores &statictis)
 {
     int c = 0; // ký tự nhập từ bàn phím
     int x = 0, y = 0 + line;
@@ -348,13 +376,13 @@ void playing(char (&array)[20][20], int &size, int &line, int &score, game &last
     bool unchanged = false;
     // unchanged dể xác định trạng thái của con trỏ có thay đổi hay không
     // nếu quá phạm vi của bảng thì trạng thái vẫn giữ nguyên, không di chuyển
-    while (c != 120)
+    while (c != ESCAPE)
     {
         c = -1;
         c = getch_noblock(); // hàm này để kiểm tra xem có phím nào được nhấn chưa
 
         // ô chưa được mở
-        if (c == 72 || c == 80 || c == 75 || c == 77 || c == 115)
+        if (c == KEY_UP || c == KEY_DOWN || c == KEY_LEFT || c == KEY_RIGHT || c == CLICK)
         {
             // trả ô về trạng thái cũ sau khi con trỏ di chuyển snang chổ khác
             if (!unchanged)
@@ -403,7 +431,7 @@ void playing(char (&array)[20][20], int &size, int &line, int &score, game &last
                 break;
             }
 
-            if (c == 115) // nếu c='s'
+            if (c == CLICK) // nếu c='s'
 
             {
                 if ((array[y - line][x] != '0') && (array[y - line][x] != 'B')) // nếu phần tử được chọn là  chỉ số  mật độ
@@ -419,7 +447,7 @@ void playing(char (&array)[20][20], int &size, int &line, int &score, game &last
                 else if (array[y - line][x] == 'B') // nếu dính bom
                 {
                     print2(array, size, line);
-                    gotoxy(0, line + size);
+                    gotoxy(0, line + size + 1);
                     cout << "failed!!!" << endl;
                     break;
                 }
@@ -437,9 +465,9 @@ void playing(char (&array)[20][20], int &size, int &line, int &score, game &last
         auto end = std::chrono::high_resolution_clock::now();                             // tính thời gian hiện tại
         auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin); // tính thời gian đã trôi qua
         time = time_before + (int)(elapsed.count() * 1e-9);
-        gotoxy(30, 15);
+        gotoxy(0, line + size);
         SetColor(0, 7);
-        cout << "Time measured: " << time << " second";
+        cout << "Time measured: " << time << " seconds";
     }
     SetColor(0, 7);
     if (c == 120) // nếu c='x' nghĩa là đang chơi nhưng thoát ra
@@ -469,10 +497,11 @@ void playing(char (&array)[20][20], int &size, int &line, int &score, game &last
         getch();
         return;
     }
-    gotoxy(0, line + size);
-    cout << "failed!!!" << endl;
+
+    cout << "score: " << score << endl;
     cout << "press any key to return to menu";
     getch();
+    getscore(score, time, size, statictis);
 }
 void newstate(char (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged, char (&state)[20][20])
 {
@@ -531,4 +560,98 @@ int getch_noblock() // hàm này để kiểm tra xem có phím nào được nh
         return _getch();
     else
         return -1;
+}
+void getscore(int &score, int &time, int &size, allscores &statistics)
+{
+
+    switch (size)
+    {
+    case (BEGINNER):
+        statistics.beginner.score.push_back(score);
+        statistics.beginner.time.push_back(time);
+        statistics.beginner.rate.push_back(score / ((float)time));
+        break;
+    case (INTERMEDIATE):
+        statistics.intermediate.score.push_back(score);
+        statistics.intermediate.time.push_back(time);
+        statistics.intermediate.rate.push_back(score / ((float)time));
+        break;
+    case (EXPERT):
+        statistics.expert.score.push_back(score);
+        statistics.expert.time.push_back(time);
+        statistics.expert.rate.push_back(score / ((float)time));
+        break;
+    }
+}
+void printscore(allscores &statistics)
+{
+tieptuc:
+    system("cls");
+    cout << "which level do you want to see? " << endl;
+    cout << "1. Beginner \n2. Intermediate \n3. Expert" << endl;
+    cout << "press 1, 2 or 3 to choose: ";
+    char key;
+    cin >> key;
+    switch (key)
+    {
+    case '1':
+        cout << " BEGINNER" << endl;
+        printscore_level(statistics.beginner);
+        break;
+    case '2':
+        cout << " INTERMEDIATE" << endl;
+        printscore_level(statistics.intermediate);
+        break;
+    case '3':
+        cout << " EXPERT" << endl;
+        printscore_level(statistics.expert);
+        break;
+    default:
+        cout << "no matching found" << endl;
+        cout << "press anykey to enter again";
+        getch();
+        goto tieptuc;
+        break;
+    }
+}
+void printscore_level(scores &level)
+{
+    system("cls");
+    cout << "Statistics" << endl;
+    gotoxy(1, 1);
+    cout << " Scores";
+    gotoxy(10, 1);
+    cout << " Time (s)";
+    gotoxy(20, 1);
+    cout << " Rate (score/s)" << endl;
+    if (level.score.empty())
+    {
+        cout << "these record is empty, please play a new game" << endl;
+        cout << "press anykey to go to menu";
+        getch();
+        return;
+    }
+    gotoxy(1, 2);
+    for (auto i : level.score)
+    {
+        cout << " " << i;
+        gotoxy(1, i + 2);
+    }
+    gotoxy(10, 2);
+    for (auto i : level.time)
+    {
+        cout << " " << i;
+        gotoxy(10, i + 2);
+    }
+    gotoxy(20, 2);
+    cout.setf(ios::fixed, ios::floatfield);
+    cout.precision(3);
+    for (auto i : level.rate)
+    {
+        cout << " " << i;
+        gotoxy(20, i + 2);
+    }
+    cout << endl;
+    cout << "press any key to go back to menu";
+    getch();
 }
