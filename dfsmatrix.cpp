@@ -17,8 +17,8 @@ bảng màu
 // dùng các phím mũi tên để di chuyển, phím a để chọn và phím x để thoát
 // i trong mảng hai chiều tương đương vs 0y, j trong mảng hai chiều thì ox
 #define KEY_LEFT 75
-#define KEY_UP 72   
-#define KEY_DOWN 80 
+#define KEY_UP 72
+#define KEY_DOWN 80
 #define KEY_RIGHT 77
 // các phím điều khiển
 #define CLICK 115
@@ -54,27 +54,26 @@ void SetColor(int backgound_color, int text_color);                             
 void mark(int x, int y, char (&array)[20][20], int &size);                                  // đánh dấu vị trí của bom theo 8 hướng
 // vi dụ
 // 1 1 1
-// 1 8 1
+// 1 B 1
 // 1 1 1
 void gotoxy(short x, short y);                            // đi đến 1 vị trí nào đó trên console
 void print1(char (&array)[20][20], int &size);            //print ra các kí tự * tượng trưng  cho các ô khi bắt đầu chơi
 void print2(char (&array)[20][20], int &size, int &line); // print ra các mine khi chọn trúng
-int options(); // hỏi lựa chọn người khi vào menu chính
-int getch_noblock(); // check xem có phím nào được nhấn không
+int options();                                            // hỏi lựa chọn người khi vào menu chính
+int getch_noblock();                                      // check xem có phím nào được nhấn không
 void playing(char (&array)[20][20], int &size, int &line, int &score, game &lastgame, char (&state)[20][20], allscores &statictis);
-void initialize_backup(char (&array)[20][20], game &lastgame, int &size, char (&state)[20][20], int &score); // khoi tao hien trang cua saved game
+void initialize_backup(char (&array)[20][20], game &lastgame, int &size, char (&state)[20][20], int &score);      // khoi tao hien trang cua saved game
 void newstate(char (&array)[20][20], int x, int y, int &line, int &size, bool &unchanged, char (&state)[20][20]); // trả lại trạng thái cũ của cell sau khi con trỏ đi qua
-void oldstate(char (&array)[20][20], int x, int y, int &line, char (&state)[20][20]); // cập nhật trạng thái mới của cell khi con trỏ đang trỏ đến
-void getscore(int &score, int &time, int &size, allscores &statistics); // nhập điểm vào record
-void printscore(allscores &statistics); // in record bằng cách hỏi level
-void printscore_level(scores &level); // in record theo level
+void oldstate(char (&array)[20][20], int x, int y, int &line, char (&state)[20][20]);                             // cập nhật trạng thái mới của cell khi con trỏ đang trỏ đến
+void getscore(int &score, int &time, int &size, allscores &statistics);                                           // nhập điểm vào record
+void printscore(allscores &statistics);                                                                           // in record bằng cách hỏi level
+void printscore_level(scores &level);                                                                             // in record theo level
 int main()
 {
-    int size = 0, key;
+    int size = 0, line = 0, score = 0, key;
     char array[20][20], state[20][20];
     game lastgame;
     allscores statistics;
-    int line = 0, score = 0;
 tieptuc:
     key = options();
     switch (key)
@@ -99,7 +98,7 @@ tieptuc:
         break;
     default:
         cout << "no matching found" << endl;
-        cout << "press anykey to enter again";
+        cout << "press any key to enter again";
         getch();
         break;
     }
@@ -145,6 +144,7 @@ void initialize_backup(char (&array)[20][20], game &lastgame, int &size, char (&
     system("cls");
     size = lastgame.size;
     cout << "welcome back to last game :D" << endl;
+    // gán các thông số
     for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
@@ -153,6 +153,7 @@ void initialize_backup(char (&array)[20][20], game &lastgame, int &size, char (&
             state[i][j] = lastgame.state[i][j];
         }
     }
+    // in ra màn hình lại board cũ
     for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
@@ -168,7 +169,6 @@ void initialize_backup(char (&array)[20][20], game &lastgame, int &size, char (&
                     SetColor(0, 14);
                 cout << array[i][j];
             }
-
         cout << endl;
     }
     score = lastgame.score;
@@ -209,7 +209,7 @@ void dfs(int i, int j, int &size, char (&array)[20][20], int &line, char (&state
     if (array[i][j] == '0') // bằng không, thì tiếp tục loang, không thì chỉ mở
     {
         state[i][j] = 'O';
-        if (state[i - 1][j] == 'U') 
+        if (state[i - 1][j] == 'U')
             dfs(i - 1, j, size, array, line, state);
         if (state[i + 1][j] == 'U')
             dfs(i + 1, j, size, array, line, state);
@@ -225,11 +225,7 @@ void print(char (&array)[20][20], int &size)
     for (i = 0; i <= size - 1; ++i)
     {
         for (j = 0; j <= size - 1; ++j)
-        {
-
             cout << array[i][j] << " ";
-        }
-
         cout << endl;
     }
 }
@@ -240,7 +236,6 @@ getkey:
     cout << " which level do you want to play? \n1.beginner \n2.intermediate \n3.expert" << endl;
     cout << "enter 1,2 or 3: ";
     char key = ' ';
-
     cin >> key;
     int size_array = 0;
     switch (key)
@@ -256,7 +251,7 @@ getkey:
         break;
     default:
         cout << "no matching found" << endl;
-        cout << "press anykey to enter again";
+        cout << "press any key to enter again";
         getch();
         goto getkey;
         break;
@@ -312,7 +307,6 @@ void gotoxy(short x, short y)
 }
 void print1(char (&array)[20][20], int &size)
 {
-
     for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
@@ -345,10 +339,9 @@ int options()
 }
 void playing(char (&array)[20][20], int &size, int &line, int &score, game &lastgame, char (&state)[20][20], allscores &statictis)
 {
-    int c = 0; // ký tự nhập từ bàn phím
-    int x = 0, y = 0 + line;
-    int time;
+    int c = 0, x = 0, y = 0 + line, time; // ký tự nhập từ bàn phím
     int time_before = lastgame.time;
+    score = 0;
     gotoxy(0, 0 + line); // x,y tọa độ
     SetColor(5, 7);
     // vị trí đầu tiên của con trỏ khi mới vào game
@@ -632,24 +625,31 @@ void printscore_level(scores &level)
         return;
     }
     gotoxy(1, 2);
+    int j = 3, order = 1;
     for (auto i : level.score)
     {
-        cout << " " << i;
-        gotoxy(1, i + 2);
+        cout << order << ". " << i;
+        gotoxy(1, j);
+        ++j;
+        ++order;
     }
     gotoxy(10, 2);
+    j = 3;
     for (auto i : level.time)
     {
         cout << " " << i;
-        gotoxy(10, i + 2);
+        gotoxy(10, j);
+        ++j;
     }
     gotoxy(20, 2);
+    j = 3;
     cout.setf(ios::fixed, ios::floatfield);
     cout.precision(3);
     for (auto i : level.rate)
     {
         cout << " " << i;
-        gotoxy(20, i + 2);
+        gotoxy(20, j);
+        ++j;
     }
     cout << endl;
     cout << "press any key to go back to menu";
