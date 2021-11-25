@@ -173,7 +173,11 @@ void initialize_backup(char (&array)[100][100], game &lastgame, int &size, char 
     {
         for (int j = 0; j <= size - 1; ++j)
         {
-            if (state[i][j] == 'U') cout << "*";
+            if (state[i][j] == 'U')
+            {
+                SetColor( 0, 7 );
+                cout << "*";
+            }
             if (state[i][j] == 'O')
             {
                 if (array[i][j] == '0')
@@ -475,7 +479,8 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, game &la
                 {
                     print2(array, size, line);
                     gotoxy(0, line + size + 1);
-                    cout << "failed!!!" << endl;
+                    cout << "Failed!!!" << endl;
+                    Unlocked = 0;
                     break;
                 }
                 else if (array[y - line][x] == '0') // nếu ô mở là không có gì, bắt đầu loang
@@ -492,6 +497,7 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, game &la
 
             if( c == FLAG )
             {
+                if( state[y-line][x] == 'O' ) continue;
                 if( state[y-line][x] == 'F' )
                 {
                     state[y-line][x] = 'U';
