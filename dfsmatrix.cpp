@@ -13,6 +13,7 @@ bảng màu
 #include <conio.h>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <vector>
 #include <windows.h>
 #include <chrono>
@@ -26,6 +27,7 @@ bảng màu
 #define FLAG 102
 #define CLICK 115
 #define ESCAPE 120
+#define Double_Click 100
 // các size của board
 #define BEGINNER 9
 #define BEGINNER_BOOM 10
@@ -38,11 +40,11 @@ using namespace std;
 
 typedef pair<int, int> ii;
 
-struct game
+/*struct game
 {
     char array[100][100], state[100][100];
     int score = 0, size = 0, time = 0, Unlocked = 0;
-};
+};*/
 struct scores
 {
     vector<int> score, time;
@@ -71,21 +73,22 @@ void print1(char (&array)[100][100], int &size);            //print ra các kí 
 void print2(char (&array)[100][100], int &size, int &line); // print ra các mine khi chọn trúng
 int options();                                            // hỏi lựa chọn người khi vào menu chính
 int getch_noblock();                                      // check xem có phím nào được nhấn không
-void playing(char (&array)[100][100], int &size, int &line, int &score, game &lastgame, char (&state)[100][100], allscores &statictis, int &Unlocked );
-void initialize_backup(char (&array)[100][100], game &lastgame, int &size, char (&state)[100][100], int &score, int &Unlocked);      // khoi tao hien trang cua saved game
+void playing(char (&array)[100][100], int &size, int &line, int &score, char (&state)[100][100], allscores &statictis, int &Unlocked, int &time_before );
+void initialize_backup(char (&array)[100][100], int &size, char (&state)[100][100], int &score, int &Unlocked, int &time_before);      // khoi tao hien trang cua saved game
 void newstate(char (&array)[100][100], int x, int y, int &line, int &size, bool &unchanged, char (&state)[100][100]); // trả lại trạng thái cũ của cell sau khi con trỏ đi qua
 void oldstate(char (&array)[100][100], int x, int y, int &line, char (&state)[100][100]);                             // cập nhật trạng thái mới của cell khi con trỏ đang trỏ đến
 void getscore(int &score, int &time, int &size, allscores &statistics);                                           // nhập điểm vào record
 void printscore(allscores &statistics);                                                                           // in record bằng cách hỏi level
 void printscore_level(scores &level);                                                                             // in record theo level
+void Saved_game( char (&array)[100][100], char (&state)[100][100], int &score, int &size, int &time, int &Unlocked );
 bool Check_Win( char (&array)[100][100], char (&state)[100][100], int &size );
 void Winner();
 int main()
 {
     int size = 0, line = 0, score = 0, key;
-    int Unlocked = 0;                       // Số ô đã mở + cắm cờ
+    int Unlocked = 0, time_before = 0;                       // Số ô đã mở + cắm cờ
     char array[100][100], state[100][100];
-    game lastgame;
+    //game lastgame;
     allscores statistics;
 tieptuc:
     key = options();
@@ -96,12 +99,12 @@ tieptuc:
         line = 5;
         initialize(array, size, state);
         print1(array, size);
-        playing(array, size, line, score, lastgame, state, statistics, Unlocked );
+        playing(array, size, line, score, state, statistics, Unlocked, time_before );
         break;
     case '2':
         line = 1;
-        initialize_backup(array, lastgame, size, state, score, Unlocked );
-        playing(array, size, line, score, lastgame, state, statistics, Unlocked );
+        initialize_backup(array, size, state, score, Unlocked, time_before );
+        playing(array, size, line, score, state, statistics, Unlocked, time_before );
         break;
     case '3':
         printscore(statistics);
@@ -153,21 +156,28 @@ void initialize(char (&array)[100][100], int &size, char (&state)[100][100])
         }
     }
 }
-void initialize_backup(char (&array)[100][100], game &lastgame, int &size, char (&state)[100][100], int &score, int &Unlocked )
+void initialize_backup(char (&array)[100][100], int &size, char (&state)[100][100], int &score, int &Unlocked, int &time_before )
 {
     system("cls");
-    size = lastgame.size;
-    Unlocked = lastgame.Unlocked;
+    ifstream fi( "Game_Data.txt" );
+    fi >> size ;
+    fi >> Unlocked;
+    fi >> time_before;
+    fi >> score;
     cout << "Welcome back to last game :D" << endl;
     // gán các thông số
-    for (int i = 0; i <= size - 1; ++i)
+    for( int i = 0; i < size; ++i )
+        for( int j = 0; j < size; ++j ) fi >> array[i][j];
+    for( int i = 0; i < size; ++i )
+        for( int j = 0; j < size; ++j ) fi >> state[i][j];
+    /*for (int i = 0; i <= size - 1; ++i)
     {
         for (int j = 0; j <= size - 1; ++j)
         {
             array[i][j] = lastgame.array[i][j];
             state[i][j] = lastgame.state[i][j];
         }
-    }
+    }*/
     // in ra màn hình lại board cũ
     for (int i = 0; i <= size - 1; ++i)
     {
@@ -196,7 +206,8 @@ void initialize_backup(char (&array)[100][100], game &lastgame, int &size, char 
         }
         cout << endl;
     }
-    score = lastgame.score;
+    fi.close();
+    //score = lastgame.score;
 }
 void randommine(char (&array)[100][100], int &size, int boom )
 {
@@ -367,10 +378,10 @@ int options()
     cin >> key;
     return (int)key;
 }
-void playing(char (&array)[100][100], int &size, int &line, int &score, game &lastgame, char (&state)[100][100], allscores &statictis, int &Unlocked )
+void playing(char (&array)[100][100], int &size, int &line, int &score, char (&state)[100][100], allscores &statictis, int &Unlocked, int &time_before )
 {
     int c = 0, x = 0, y = 0 + line, time; // ký tự nhập từ bàn phím
-    int time_before = lastgame.time;
+    //int time_before = lastgame.time;
     score = 0;
     gotoxy(0, 0 + line); // x,y tọa độ
     SetColor(5, 7);
@@ -412,7 +423,7 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, game &la
         tolower(c);             // Lỡ gamer có ngu ngục nhập Caplock thì nó tự chuyển về chữ thường
 
         // ô chưa được mở
-        if (c == KEY_UP || c == KEY_DOWN || c == KEY_LEFT || c == KEY_RIGHT || c == CLICK || c == FLAG )
+        if (c == KEY_UP || c == KEY_DOWN || c == KEY_LEFT || c == KEY_RIGHT || c == CLICK || c == FLAG || c == Double_Click )
         {
             // trả ô về trạng thái cũ sau khi con trỏ di chuyển snang chổ khác
             if (!unchanged)
@@ -495,6 +506,65 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, game &la
                 }
             }
 
+            if( c == Double_Click )
+            {
+                if( state[y-line][x] != 'O' ) continue;
+                if( array[y-line][x] == '0' ) continue;
+                int count_Flag = 0;
+                for( int i = -1; i <= 1; ++i )
+                    for( int j = -1; j <= 1; ++j )
+                    {
+                        if( i == 0 && j == 0 ) continue;
+                        int _x = y - line + i;
+                        int _y = x + j;
+                        if( _x < 0 || _x >= size || _y < 0 || _y >= size ) continue;
+                        if( state[_x][_y] == 'F' ) ++count_Flag;
+                    }
+                if( count_Flag != ( int( array[y-line][x] ) - 48 ) ) continue;
+                for( int i = -1; i <= 1; ++i )
+                    for( int j = -1; j <= 1; ++j )
+                    {
+                        if( i == 0 && j == 0 ) continue;
+                        int _x = y - line + i;
+                        int _y = x + j;
+                        if( _x < 0 || _x >= size || _y < 0 || _y >= size ) continue;
+                        if( state[_x][_y] == 'F' || state[_x][_y] == 'O' ) continue;
+
+                        gotoxy( x + j, y + i );
+                        if ( ( array[_x][_y] > '0' ) && (array[_x][_y] != 'B') ) // nếu phần tử được chọn là  chỉ số  mật độ
+                        {
+                            SetColor(0, 14);                    // purple, light yellow
+                            cout << array[_x][_y];
+                            //gotoxy(x, y);
+                            state[_x][_y] = 'O';
+                            SetColor(0, 7);                     // black, white
+                            // chỉ mở, không loang
+                            ++score; // cộng điểm
+                            ++Unlocked;
+                            gotoxy( x, y );
+                            //continue;
+                        }
+                        else if (array[_x][_y] == 'B') // nếu dính bom
+                        {
+                            print2(array, size, line);
+                            gotoxy(0, line + size + 1);
+                            cout << "Failed!!!" << endl;
+                            Unlocked = 0;
+                            break;
+                        }
+                        else if (array[_x][_y] == '0') // nếu ô mở là không có gì, bắt đầu loang
+                        {
+                            // tránh trường hợp chọn lại 1 ô, nó sẽ cho ra giá trị âm, lộ dữ liệu
+                            dfs( _x, _y, size, array, line, state, Unlocked);
+                            gotoxy( x + j, y + i);
+                            SetColor(5, 5);
+                            cout << "*";
+                            gotoxy(x, y);
+                            ++score;
+                        }
+                    }
+            }
+
             if( c == FLAG )
             {
                 if( state[y-line][x] == 'O' ) continue;
@@ -540,18 +610,9 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, game &la
         cin >> key;
         if (tolower(key) == 'y')
         {
-            int i, j;
-            for (i = 0; i <= size - 1; ++i)
-                for (j = 0; j <= size - 1; ++j)
-                {
-                    lastgame.array[i][j] = array[i][j];
-                    lastgame.state[i][j] = state[i][j];
-                }
-            lastgame.size = size;
-            lastgame.time = time;
-            lastgame.score = score;
+            Saved_game( array, state, score, size, time, Unlocked );
         }
-
+        Unlocked = 0;
         return;
         cout << "Press any key to return to menu";
         getch();
@@ -732,6 +793,22 @@ void printscore_level(scores &level)
     cout << endl;
     cout << "Press any key to go back to menu";
     getch();
+}
+void Saved_game( char (&array)[100][100], char (&state)[100][100], int &score, int &size, int &time, int &Unlocked )
+{
+    ofstream fo( "Game_Data.txt" );
+    fo << size << " " << Unlocked << " " << time << " " << score << endl;
+    for( int i = 0; i < size; ++i )
+    {
+        for( int j = 0; j < size; ++j ) fo << array[i][j] << " ";
+        fo << endl;
+    }
+    for( int i = 0; i < size; ++i )
+    {
+        for( int j = 0; j < size; ++j ) fo << state[i][j] << " ";
+        fo << endl;
+    }
+    fo.close();
 }
 bool Check_Win( char (&array)[100][100], char (&state)[100][100], int &size )
 {
