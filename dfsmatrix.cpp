@@ -27,8 +27,8 @@ bảng màu
 #define CLICK 115
 #define ESCAPE 120
 // các size của board
-#define BEGINNER 2//9
-#define BEGINNER_BOOM 1//10
+#define BEGINNER 9
+#define BEGINNER_BOOM 10
 #define INTERMEDIATE 16
 #define INTERMEDIATE_BOOM 40
 #define EXPERT 21
