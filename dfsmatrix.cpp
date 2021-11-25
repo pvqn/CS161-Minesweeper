@@ -511,6 +511,7 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, char (&s
                 if( state[y-line][x] != 'O' ) continue;
                 if( array[y-line][x] == '0' ) continue;
                 int count_Flag = 0;
+                bool Boom = false;
                 for( int i = -1; i <= 1; ++i )
                     for( int j = -1; j <= 1; ++j )
                     {
@@ -547,10 +548,7 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, char (&s
                         else if (array[_x][_y] == 'B') // nếu dính bom
                         {
                             print2(array, size, line);
-                            gotoxy(0, line + size + 1);
-                            cout << "Failed!!!" << endl;
-                            Unlocked = 0;
-                            break;
+                            Boom = true;
                         }
                         else if (array[_x][_y] == '0') // nếu ô mở là không có gì, bắt đầu loang
                         {
@@ -563,6 +561,14 @@ void playing(char (&array)[100][100], int &size, int &line, int &score, char (&s
                             ++score;
                         }
                     }
+                if( Boom )
+                {
+                    gotoxy(0, line + size + 1);
+                    SetColor(0, 7);
+                    cout << "Failed!!!" << endl;
+                    Unlocked = 0;
+                    break;
+                }
             }
 
             if( c == FLAG )
